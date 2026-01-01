@@ -1,16 +1,17 @@
-import React, { use } from 'react'
-import api from '../services/api';
-import {useEffect, useState} from 'react'
-
-
+import React, { useEffect, useState } from "react";
+import api from "../services/api";
 
 function TaskManager() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
 
   const fetchTasks = async () => {
-    const res = await api.get("/tasks");
-    setTasks(res.data);
+    try {
+      const res = await api.get("/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
   };
 
   useEffect(() => {
@@ -18,44 +19,69 @@ function TaskManager() {
   }, []);
 
   const addTask = async () => {
-    if (!title) return;
-    await api.post("/tasks", {
-      title,
-    }); 
-    setTitle("");
-    fetchTasks();
+    if (!title.trim()) return;
+    try {
+      await api.post("/tasks", { title });
+      setTitle("");
+      fetchTasks();
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
   };
 
   const deleteTask = async (id) => {
-        await api.delete(`/tasks/${id}`);
-    fetchTasks();
+    try {
+      await api.delete(`/tasks/${id}`);
+      fetchTasks();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   };
+
   return (
     <div className="p-4 max-w-md mx-auto">
-      <h1
-      className='text-2xl font-bold mb-4'
-      >Task Manager</h1>
+      <h1 className="text-2xl font-bold mb-4">Task Manager</h1>
 
-      <input
-        type="text"
-        className='border p-2  '
-        placeholder="Add a new task"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+      <div className="mb-4">
+        <input
+          type="text"
+          className="border p-2 rounded w-full mb-2"
+          placeholder="Add a new task"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && addTask()}
+        />
 
-      <button
-        className='border p-2 ml-2 bg-blue-500 text-white'
-       onClick={addTask}> Add Task</button>
+        <button
+          className="border p-2 rounded bg-blue-500 text-white hover:bg-blue-600 w-full"
+          onClick={addTask}
+        >
+          Add Task
+        </button>
+      </div>
 
-      <ul>
+      <ul className="space-y-2">
         {tasks.map((task) => (
-          <li key={task.id}>
-            {task.title}
-            <button onClick={() => deleteTask(task.id)}>Delete</button>
+          <li
+            key={task._id}
+            className="flex justify-between items-center p-3 border rounded shadow-sm"
+          >
+            <span className="flex-1">{task.title}</span>
+            <button
+              onClick={() => deleteTask(task._id)}
+              className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
+
+      {tasks.length === 0 && (
+        <p className="text-center text-gray-500 mt-4">
+          No tasks yet. Add one above!
+        </p>
+      )}
     </div>
   );
 }
